@@ -1,8 +1,8 @@
 // MongoDB Configuration
 mongodb.databaseName="jimTest2"
-mongodb.primary.server.address="184.73.247.21"
+mongodb.primary.server.address=localhost
 mongodb.primary.server.port=27017
-mongodb.secondary.server.address="184.73.247.21"
+mongodb.secondary.server.address=localhost
 mongodb.secondary.server.port=27018
 
 // locations to search for config files that get merged into the main config
