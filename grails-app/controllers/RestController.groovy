@@ -1,3 +1,6 @@
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import org.apache.commons.io.IOUtils;
 import org.codehaus.groovy.grails.commons.ConfigurationHolder;
 
@@ -22,30 +25,17 @@ class RestController  {
 	static Mongo mongo;
 
 	/**	
-	 * Inserts a row into MongoDB.
+	 * Inserts a row into MongoDB.  The syntax for this type of request is:
+	 * 
+	 * http://<web server>/mongrails/rest/insert/<collection name>
+	 * 
+	 * You should include a json object as the body of the post request.
 	 */
 	def insert = {
-		// Initialize mongo if it hasn't be initialized previously.	
-		if (mongo == null) {
-			ServerAddress primary = new ServerAddress(ConfigurationHolder.flatConfig."mongodb.primary.server.address", 
-				ConfigurationHolder.flatConfig."mongodb.primary.server.port");
-			
-			// configure a secondary address if present.
-			ServerAddress secondary = null;
-			if (ConfigurationHolder.flatConfig."mongodb.secondary.server.address" instanceof String) {
-				secondary = new ServerAddress(ConfigurationHolder.flatConfig."mongodb.secondary.server.address", 
-					Integer.valueOf(ConfigurationHolder.flatConfig."mongodb.secondary.server.port"));
-			}
-			
-			if (secondary != null) {
-				mongo = new Mongo(primary, secondary);
-			}
-			else {
-				mongo = new Mongo(primary);
-			}
-		}
 		
-		DB db =  mongo.getDB(ConfigurationHolder.config.mongodb.databaseName);
+        Mongo mongo = MongoDBConfiguration.getMongo();
+		
+		DB db =  mongo.getDB(MongoDBConfiguration.getInstance().getDatabaseName());
 		
 		DBCollection coll = db.getCollection(params."id")
 		
@@ -56,4 +46,34 @@ class RestController  {
 		
 		render "processed"
 	}
+    
+    /**
+     * Scans the request parametes and persists all the request parameters to the specified collection.
+     */
+    def log = {
+        Mongo mongo = MongoDBConfiguration.getMongo();
+        
+        DB db =  mongo.getDB(MongoDBConfiguration.getInstance().getDatabaseName());
+        
+        DBCollection coll = db.getCollection(params."id")
+        
+        BasicDBObject doc = new BasicDBObject();
+        
+        for (String key : params.keySet()) {
+            doc.put(key, params[key]);
+        }
+        
+        BasicDBObject baseInformation = new BasicDBObject();
+        
+        baseInformation.put("date", new SimpleDateFormat("yyyyMMdd").format(new Date()));
+        baseInformation.put("time", new SimpleDateFormat("HHmmss").format(new Date()));
+        baseInformation.put("referrer", request.getHeader("referer"));
+        
+        doc.put("baseInformation", baseInformation);
+        
+        coll.insert(doc);
+        
+        render "processed";
+        
+    }
 }

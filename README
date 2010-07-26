@@ -3,4 +3,15 @@ Mongrails
 Jim Englert
 ==============
 
-Mongrails is a simple rest interface for MongoDB written in grails.
+Mongrails is a simple rest interface for MongoDB written in grails.  This project is developed against grails 1.2.2.
+
+Configuration: Edit the Config.groovy file to specify the location of your mongoDB server.  The following parameters can be changed:
+
+mongodb.databaseName="production"  // The database that you want to add rows to
+mongodb.primary.server.address="localhost" // The primary MongoDB server
+mongodb.primary.server.port=27017 // The primary MongoDB server port
+mongodb.secondary.server.address="localhost"  // Optional: Specify a second MongoDB server if necessary
+mongodb.secondary.server.port=27018 // Option: Specify a second MongoDB server port
+
+
+
