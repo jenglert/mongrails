@@ -48,7 +48,7 @@ class RestController  {
 	}
     
     /**
-     * Scans the request parametes and persists all the request parameters to the specified collection.
+     * Scans the request parameters and persists all the request parameters to the specified collection.
      */
     def log = {
         Mongo mongo = MongoDBConfiguration.getMongo();
@@ -73,7 +73,7 @@ class RestController  {
         
         coll.insert(doc);
         
-        render "processed";
+        render "";
         
     }
 }
