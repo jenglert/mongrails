@@ -26,7 +26,7 @@
 		<link>
 			<name>tomcat-1.2.2-src-groovy</name>
 			<type>2</type>
-			<location>C:/Users/jenglert/.grails/1.2.2/projects/Mongrails/plugins/tomcat-1.2.2/src/groovy</location>
+			<location>C:/Users/jenglert/.grails/1.2.2/projects/mongrails/plugins/tomcat-1.2.2/src/groovy</location>
 		</link>
 	</linkedResources>
 </projectDescription>

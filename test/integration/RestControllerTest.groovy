@@ -4,7 +4,7 @@ import org.apache.commons.httpclient.methods.PostMethod;
 class RestControllerTest extends GroovyTestCase {
 
 	public voidTestInsertData() {
-		PostMethod method = new PostMethod("http://localhost:8080/Mongrails/rest/insert/test");
+		PostMethod method = new PostMethod("http://184.73.247.21:8080/mongrails/rest/insert/test");
 		method.setRequestBody("{'x': 1, 'y': 2}");
 		
 		HttpClient client = new HttpClient();
@@ -14,5 +14,4 @@ class RestControllerTest extends GroovyTestCase {
 		assertNotNull method.getResponseBodyAsString()
 		assertEquals "processed", method.getResponseBodyAsString()
 	}
-	
 }
