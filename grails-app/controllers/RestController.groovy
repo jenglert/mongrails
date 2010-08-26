@@ -1,13 +1,13 @@
+import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
+
+
 import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.io.IOUtils;
-import org.codehaus.groovy.grails.commons.ConfigurationHolder;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import org.apache.commons.lang.StringUtils;
 
 
 import com.mongodb.*;
@@ -74,6 +74,159 @@ class RestController  {
         coll.insert(doc);
         
         render "";
+    }
+    
+    /**
+     * Retrieves the count of objects in the database.
+     */
+    def count = {
+        Mongo mongo = MongoDBConfiguration.getMongo();
         
+        DB db =  mongo.getDB(MongoDBConfiguration.getInstance().getDatabaseName());
+     
+        DBCollection coll = db.getCollection(params."id");
+        
+        Map<String, QueryClause> queryClauses = createQueryClause(request);
+        
+        DBCursor cursor;
+        if (queryClauses.size() == 0) {
+            cursor = coll.find();
+        }
+        else {
+            BasicDBObject query = new BasicDBObject();
+            for (QueryClause clause : queryClauses.values()) {
+                query.put(clause.getParameter(), new BasicDBObject(clause.getOperator(), clause.getOperand()));
+            }
+            cursor = coll.find(query);
+        }
+        
+        render cursor.count()
+    }
+    
+    /**
+     * Retrieves objects in an XML format
+     */
+    def retrieve = {
+        Mongo mongo = MongoDBConfiguration.getMongo();
+        
+        DB db =  mongo.getDB(MongoDBConfiguration.getInstance().getDatabaseName());
+     
+        DBCollection coll = db.getCollection(params."id");
+        
+        String colsToRetrieve = request.getParameter("cols");
+        
+        String[] cols = StringUtils.split(colsToRetrieve, ',');
+        
+        Map<String, QueryClause> queryClauses = createQueryClause(request);
+        
+        DBCursor cursor;
+        if (queryClauses.size() == 0) {
+            cursor = coll.find();
+        }
+        else {
+            BasicDBObject query = new BasicDBObject();
+            for (QueryClause clause : queryClauses.values()) {
+                query.put(clause.getParameter(), new BasicDBObject(clause.getOperator(), clause.getOperand()));
+            }
+            cursor = coll.find(query);
+        }
+        
+        StringBuilder results = new StringBuilder();
+        results.append("<?xml version=\"1.0\" encoding=\"UTF-8\" ?>");
+        results.append("<" + params."id" + ">\n")
+        while (cursor.hasNext()) {
+            DBObject dbObject = cursor.next()
+            results.append("<item>\n")
+            
+            for (String col : cols) {
+                Object result = dbObject;
+                
+                String[] levels = StringUtils.split(col, '.');
+                for (String level : levels) {
+                    try {
+                        result = ((DBObject) result).get(level);
+                    }
+                    catch (GroovyCastException gce) {
+                        render "Unable to find value in object: " + col;
+                        return
+                    }
+                }
+                
+                
+                results.append("<" + col.replace('.', '-') + ">\n")
+                results.append(result);
+                results.append("</" + col.replace('.', '-') + ">\n")
+            }
+            
+            results.append("</item>\n")
+        }
+        results.append("</" + params."id" + ">\n")
+        
+        response.setContentType("text/xml");
+        
+        render results;
+    }
+    
+    /**
+     * Creates a map of query clauses based on parameters from the request.
+     */
+    private Map<String, QueryClause> createQueryClause(HttpServletRequest request) {
+        Map<String, QueryClause> queryClauses = new HashMap<String, QueryClause>();
+        
+        
+        // Iterate over all the objects and find any query clauses.
+        for (String param : request.getParameterMap().keySet()) {
+            
+            if (param.endsWith("PARAM")) {
+                String name = param.replace("PARAM", "");
+                
+                
+                QueryClause clause = queryClauses.get(name);
+                if (clause == null) {
+                    clause = new QueryClause();
+                }
+                
+                clause.setParameter(request.getParameter(param));
+                
+                queryClauses.put(name, clause);
+            }
+            
+            if (param.endsWith("OPERATOR")) {
+                String name = param.replace("OPERATOR", "");
+                
+                
+                QueryClause clause = queryClauses.get(name);
+                if (clause == null) {
+                    clause = new QueryClause();
+                }
+                
+                clause.setOperator(request.getParameter(param));
+                
+                queryClauses.put(name, clause);
+            }
+            
+            if (param.endsWith("OPERAND")) {
+                String name = param.replace("OPERAND", "");
+                
+                
+                QueryClause clause = queryClauses.get(name);
+                if (clause == null) {
+                    clause = new QueryClause();
+                }
+                
+                clause.setOperand(request.getParameter(param));
+                
+                queryClauses.put(name, clause);
+            }
+        }
+        
+        for (String name : new HashMap<String, QueryClause>(queryClauses).keySet()) {
+            if (!queryClauses.get(name).isValid()) {
+                queryClauses.remove(name);
+                System.out.println("Unable to create query clause for " + name);
+            }
+        }
+        
+        return queryClauses;
     }
 }
